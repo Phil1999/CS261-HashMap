@@ -1,14 +1,16 @@
-# Name:
-# OSU Email:
+# Name: Philip Lee
+# OSU Email: leephili@oregonstate.edu
 # Course: CS261 - Data Structures
-# Assignment:
-# Due Date:
-# Description:
+# Assignment: 6
+# Due Date: 08/13/2024
+# Description: Implementation of HashMap using Separate Chaining.
 
 
 from a6_include import (DynamicArray, LinkedList,
                         hash_function_1, hash_function_2)
 
+
+LOAD_THRESHOLD = 1
 
 class HashMap:
     def __init__(self,
@@ -89,67 +91,253 @@ class HashMap:
     # ------------------------------------------------------------------ #
 
     def put(self, key: str, value: object) -> None:
+        """ Updates the key/value pair in the hash map.
+
+        If the given key exists, replace the old value with the new value. 
+        
+        If it is a new key, we create a new key/value pair.
+
+        If the table factor is >= 0.5, we resize the table to 2x of its
+        current capacity.
+        
+        Args:
+            key: the key for the k/v pair.
+            value: the value for the k/v pair.
+        
+        Returns:
+            None
         """
-        TODO: Write this implementation
-        """
-        pass
+
+        # Resize table first if over our threshold.
+        if self.table_load() >= LOAD_THRESHOLD:
+            self.resize_table(2*self._capacity)
+
+        index = self._hash_function(key) % self._capacity
+        bucket = self._buckets[index]
+
+        node = bucket.contains(key)
+        # Update existing key.
+        if node:
+            node.value = value
+        else:
+            bucket.insert(key, value)
+            self._size += 1
+        
 
     def resize_table(self, new_capacity: int) -> None:
+        """ Changes the capacity of the underlying table. All pairs from the original
+        table are copied over to the new table and all non-tombstone hash table links
+        are rehashed.
+
+        If the new_capacity is less than 1 the method does nothing.
+
+        Args:
+            new_capacity: The new capacity of the table.
+
+        Returns:
+            None
         """
-        TODO: Write this implementation
-        """
-        pass
+        if new_capacity < 1:
+            return
+        
+        # Ensure it is a prime number, and if not pick the next highest prime number.
+        if self._is_prime(new_capacity) is False:
+            new_capacity = self._next_prime(new_capacity)
+        
+        # Store the old buckets
+        old_buckets = self._buckets
+        # Prepare our pointers to new table values.
+        self._buckets = DynamicArray()
+        self._capacity = new_capacity
+        self._size = 0
+
+        # Initialize new buckets
+        for _ in range(self._capacity):
+            self._buckets.append(LinkedList())
+
+        # Rehash all entries from old table
+        # Note: put will rehash for us
+        for index in range(old_buckets.length()):
+            bucket = old_buckets[index]
+            for node in bucket:
+                self.put(node.key, node.value)
+
 
     def table_load(self) -> float:
+        """ Returns the current hash table load factor
+        
+        Args:
+            No arguments.
+
+        Returns:
+            The current hash table load factor (float)
         """
-        TODO: Write this implementation
-        """
-        pass
+        return self._size / self._capacity
 
     def empty_buckets(self) -> int:
+        """ Returns the number of empty buckets in the hash table.
+
+        Args:
+            No arguments.
+
+        Returns:
+            The number of empty buckets within the hash table.
         """
-        TODO: Write this implementation
-        """
-        pass
+        num_empty = 0
+
+        for index in range(self._buckets.length()):
+            if self._buckets[index].length() == 0:
+                num_empty += 1
+
+        return num_empty
 
     def get(self, key: str):
+        """ Returns the value associated with the given key.
+        
+        Args:
+            key: The key of the paired value.
+
+        Return:
+            The value associated with the key, or None if the key doesn't
+            exist within the hash map.
         """
-        TODO: Write this implementation
-        """
-        pass
+        index = self._hash_function(key) % self._capacity
+        bucket = self._buckets[index]
+
+        # We can utilize LinkedList contains() to find the node we want.
+        node = bucket.contains(key)
+
+        if node:
+            return node.value
+        
+        return None
 
     def contains_key(self, key: str) -> bool:
+        """ Checks if the given key exists within the hash table.
+        
+        Args:
+            key: The key to check for.
+
+        Returns:
+            True, if the key is within the hash table. Otherwise, False.
         """
-        TODO: Write this implementation
-        """
-        pass
+        return self.get(key) is not None
 
     def remove(self, key: str) -> None:
+        """ Removes the given key and its associated value from the hash map. If the key
+        doesn't exist the method does nothing.
+        
+        Args:
+            key: The key to use to remove the k/v pair.
+
+        Returns:
+            None
         """
-        TODO: Write this implementation
-        """
-        pass
+        index = self._hash_function(key) % self._capacity
+        bucket = self._buckets[index]
+
+        # We can utilize LinkedList remove() to remove the node we want.
+        removed = bucket.remove(key)
+        if removed:
+            self._size -= 1
 
     def get_keys_and_values(self) -> DynamicArray:
+        """ Returns a dynamic array with each index containing a tuple of a key/value pair
+        that is stored in the hash map. 
+        
+        (Key order doesn't matter)
+        
+        Args:
+            No arguments.
+
+        Returns:
+            A dynamic array containing tuples of a key/value pair that are
+            stored in the hash map.
         """
-        TODO: Write this implementation
-        """
-        pass
+        result = DynamicArray()
+
+        for index in range(self._buckets.length()):
+            bucket = self._buckets[index]
+
+            for node in bucket:
+                result.append((node.key, node.value))
+
+        return result
 
     def clear(self) -> None:
+        """ Clears the contents of the hash map. Does not change the underlying
+        hash table capacity.
+        
+        Args:
+            No arguments.
+
+        Returns:
+            None
         """
-        TODO: Write this implementation
-        """
-        pass
+        for index in range(self._buckets.length()):
+            # Empty the bucket.
+            self._buckets[index] = LinkedList()
+
+        self._size = 0
 
 
 def find_mode(da: DynamicArray) -> tuple[DynamicArray, int]:
+    """ Receives a DynamicArray and returns a tuple containing:
+
+    1. Dynamic Array comprising the mode(s) - the value(s) occuring most frequently in the array.
+    2. An integer repreenting the highest frequency of occurence for the mode value(s).
+
+    If there are multiple values with the highest frequency, all of them are returned in the
+    DynamicArray. For one mode, the DynamicArray contains just that value.
+
+    Preconditions:
+        The input 'da' is not guaranteed to be sorted.
+        All values in the DynamicArray are assumed to be strings.
+        The input 'da' is guaranteed to have atleast one element.
+
+    Args:
+        da: A DynamicArray with string values.
+
+    Returns:
+        tuple [DynamicArray, int]: A tuple containing:
+        - A DynamicArray of mode(s)
+        - An integer representing the highest frequency for these mode(s)
     """
-    TODO: Write this implementation
-    """
-    # if you'd like to use a hash map,
-    # use this instance of your Separate Chaining HashMap
     map = HashMap()
+
+    # Count frequencies by traversing the array and use our HashMap to store it as
+    # a k/v pair. [key=string, value=#freq]
+    for index in range(da.length()):
+        key = da[index]
+        frequency = map.get(key)
+        # If key doesn't exist
+        if frequency is None:
+            map.put(key, 1)
+        else:
+            map.put(key, frequency + 1)
+        
+
+    # Get the key_value pairs
+    key_value_pairs = map.get_keys_and_values()
+    
+    # Collect all keys with the highest frequency
+    mode_array = DynamicArray()
+    max_frequency = 0
+
+    for index in range(key_value_pairs.length()):
+        string, frequency = key_value_pairs.get_at_index(index)
+        
+        # If we found a new max_frequency we need to reset our values.
+        if frequency > max_frequency:
+            max_frequency = frequency
+            mode_array = DynamicArray()
+            mode_array.append(string)
+        # Otherwise, add to our result array.
+        elif frequency == max_frequency:
+            mode_array.append(string)
+    
+    return (mode_array, max_frequency)
+
 
 
 # ------------------- BASIC TESTING ---------------------------------------- #

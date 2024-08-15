@@ -8,7 +8,7 @@
 from a6_include import (DynamicArray, DynamicArrayException, HashEntry,
                         hash_function_1, hash_function_2)
 
-load_threshold = 0.5
+LOAD_THRESHOLD = 0.5
 
 class HashMap:
     def __init__(self, capacity: int, function) -> None:
@@ -105,7 +105,7 @@ class HashMap:
         """
         
         # Resize table first if over our threshold.
-        if self.table_load() >= load_threshold:
+        if self.table_load() >= LOAD_THRESHOLD:
             self.resize_table(2*self._capacity)
 
         initial_index = self._hash_function(key) % self._capacity
@@ -138,6 +138,9 @@ class HashMap:
         """ Changes the capacity of the underlying table. All pairs from the original
         table are copied over to the new table and all non-tombstone hash table links
         are rehashed.
+
+        If the new_capacity is less than the current number of elements in the hash table
+        the method does nothing.
 
         Args:
             new_capacity: The new capacity of the table.
@@ -248,7 +251,7 @@ class HashMap:
 
     def remove(self, key: str) -> None:
         """ Removes the given key and its associated value from the hash map. If the key
-        doesn't exist the method dose nothing.
+        doesn't exist the method does nothing.
         
         Args:
             key: The key to use to remove the k/v pair.
