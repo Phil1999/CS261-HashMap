@@ -111,7 +111,7 @@ class HashMap:
         initial_index = self._hash_function(key) % self._capacity
         j = 0
 
-        while True:
+        while j < self._capacity:
             # quadratic probe formula as shown in notes.
             index = (initial_index + j ** 2) % self._capacity
             entry = self._buckets[index]
@@ -217,7 +217,7 @@ class HashMap:
         initial_index = self._hash_function(key) % self._capacity
         j = 0
 
-        while True:
+        while j < self._capacity:
             index = (initial_index + j**2) % self._capacity
             entry = self._buckets[index]
 
@@ -230,9 +230,8 @@ class HashMap:
             # Quadratic probe for next index.
             else:
                 j += 1
-                # If we hit the end and still haven't found the key.
-                if j > self._capacity:
-                    return None
+
+        return None
             
 
         
@@ -262,7 +261,7 @@ class HashMap:
         initial_index = self._hash_function(key) % self._capacity
         j = 0
 
-        while True:
+        while j < self._capacity:
             index = (initial_index + j**2) % self._capacity
             entry = self._buckets[index]
 
@@ -275,8 +274,6 @@ class HashMap:
                 return
             else:
                 j += 1
-                if j > self._capacity:
-                    return
 
     def get_keys_and_values(self) -> DynamicArray:
         """ Returns a dynamic array with each index containing a tuple of a key/value pair
@@ -330,21 +327,20 @@ class HashMap:
         """ Method returns the next item in the hash map based on the current location
         of the iterator. It only iterates through active items. (non-tombstone)
         """
-        try:
-            # Continue until we have a valid entry
-            while True:
-                entry = self._buckets[self._current_index]
+        # Loop through the table until a valid entry is found or end of table
+        while self._current_index < self._capacity:
+            entry = self._buckets[self._current_index]
 
-                if entry is not None and not entry.is_tombstone:
-                    # Make sure we point to next index for our future calls.
-                    self._current_index += 1
-                    return entry
-                
-                # If value was None or tombstone, check next entry.
+            # If entry is valid, return it
+            if entry is not None and not entry.is_tombstone:
                 self._current_index += 1
+                return entry
 
-        except DynamicArrayException:
-            raise StopIteration
+            # Move to the next index
+            self._current_index += 1
+
+        # If we reach here, we've exhausted all entries in the hash table
+        raise StopIteration
 
 
 # ------------------- BASIC TESTING ---------------------------------------- #
